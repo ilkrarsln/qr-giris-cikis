@@ -13,6 +13,15 @@
   <h3>İş Yeri Ekle</h3>
   <input id="workplaceName" placeholder="İş yeri adı">
   <button onclick="addWorkplace()">Ekle</button>
+  <hr>
+
+<h3>Giriş / Çıkış</h3>
+
+<button onclick="checkInOut('in')">Giriş Yap</button>
+<button onclick="checkInOut('out')">Çıkış Yap</button>
+
+<p id="result"></p>
+
 </div>
 
 <div id="employeePanel" style="display:none">
@@ -99,6 +108,48 @@ async function loadEmployeeWorkplaces() {
 }
 
 loadUser();
+
+  async function checkInOut(type) {
+  document.getElementById("result").innerText = "Konum alınıyor...";
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      // ŞİMDİLİK: kullanıcının ilk iş yerini alıyoruz
+      const { data: w } = await supabaseClient
+        .from("workplace_users")
+        .select("workplace_id")
+        .eq("user_id", currentUser.id)
+        .limit(1)
+        .single();
+
+      if (!w) {
+        document.getElementById("result").innerText = "İş yeri bulunamadı";
+        return;
+      }
+
+      await supabaseClient.from("attendance").insert({
+        user_id: currentUser.id,
+        workplace_id: w.workplace_id,
+        type: type,
+        lat: lat,
+        lng: lng
+      });
+
+      document.getElementById("result").innerText =
+        type === "in"
+          ? "Giriş kaydedildi ✅"
+          : "Çıkış kaydedildi ✅";
+    },
+    () => {
+      document.getElementById("result").innerText =
+        "Konum izni verilmedi ❌";
+    }
+  );
+}
+
 </script>
 
 </body>
