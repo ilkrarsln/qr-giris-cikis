@@ -2,13 +2,39 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Giriş Çıkış</title>
+  <title>QR Giriş Çıkış</title>
+
+  <!-- Supabase kütüphanesi -->
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
 </head>
 <body>
 
-<h2>QR Giriş / Çıkış</h2>
+<h2>Supabase Bağlantı Testi</h2>
 
-<p>Bu sayfa çalışıyorsa Vercel hazır.</p>
+<button onclick="testSupabase()">Bağlantıyı Test Et</button>
+
+<script>
+  const SUPABASE_URL = "BURAYA_SUPABASE_URL";
+  const SUPABASE_KEY = "BURAYA_ANON_KEY";
+
+  const supabase = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+  async function testSupabase() {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*");
+
+    if (error) {
+      alert("Hata: " + error.message);
+    } else {
+      alert("Bağlantı başarılı 🎉");
+      console.log(data);
+    }
+  }
+</script>
 
 </body>
 </html>
