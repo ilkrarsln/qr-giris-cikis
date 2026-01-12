@@ -4,21 +4,27 @@
   <meta charset="UTF-8" />
   <title>İş Takip Sistemi</title>
 
-  <!-- Supabase -->
+  <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
+      max-width: 500px;
+      margin: auto;
     }
     input, button {
-      padding: 8px;
-      margin: 5px 0;
+      padding: 10px;
+      margin: 6px 0;
       width: 100%;
+      font-size: 16px;
     }
     button {
       cursor: pointer;
+    }
+    hr {
+      margin: 20px 0;
     }
   </style>
 </head>
@@ -57,7 +63,7 @@
 const SUPABASE_URL = "https://fqqmorvjwfxsqjwvdkgp.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxcW1vcnZqd2Z4c3Fqd3Zka2dwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDE0OTYsImV4cCI6MjA4Mzc3NzQ5Nn0.NVwFiL2mAGGroLlhbp10govDQhZBZzthClboBnsHpLw";
 
-const supabase = supabaseJs.createClient(
+const sb = supabase.createClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
 );
@@ -67,16 +73,14 @@ const supabase = supabaseJs.createClient(
 ======================= */
 
 async function loadUser() {
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await sb.auth.getUser();
 
   if (!user) {
-    document.getElementById("title").innerText = "Giriş yok";
+    document.getElementById("title").innerText = "Giriş yapılmamış";
     return;
   }
 
-  const { data: profile, error } = await supabase
+  const { data: profile, error } = await sb
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -104,16 +108,19 @@ async function loadUser() {
 async function addWorkplace() {
   const name = document.getElementById("workplaceName").value;
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  if (!name) {
+    alert("İş yeri adı gir");
+    return;
+  }
+
+  const { data: { user } } = await sb.auth.getUser();
 
   if (!user) {
     alert("Giriş yok");
     return;
   }
 
-  const { error } = await supabase
+  const { error } = await sb
     .from("workplaces")
     .insert({
       name: name,
@@ -124,6 +131,7 @@ async function addWorkplace() {
     alert("Hata: " + error.message);
   } else {
     alert("İş yeri eklendi");
+    document.getElementById("workplaceName").value = "";
   }
 }
 
@@ -132,16 +140,14 @@ async function addWorkplace() {
 ======================= */
 
 async function checkInOut(type) {
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await sb.auth.getUser();
 
   if (!user) {
     alert("Giriş yok");
     return;
   }
 
-  const { data: workplace, error: wpError } = await supabase
+  const { data: workplace, error: wpError } = await sb
     .from("workplaces")
     .select("id")
     .eq("owner_id", user.id)
@@ -152,7 +158,7 @@ async function checkInOut(type) {
     return;
   }
 
-  const { error } = await supabase
+  const { error } = await sb
     .from("attendance_logs")
     .insert({
       user_id: user.id,
@@ -164,7 +170,9 @@ async function checkInOut(type) {
     alert("Hata: " + error.message);
   } else {
     document.getElementById("result").innerText =
-      type === "in" ? "Giriş kaydedildi" : "Çıkış kaydedildi";
+      type === "in"
+        ? "Giriş kaydedildi"
+        : "Çıkış kaydedildi";
   }
 }
 
