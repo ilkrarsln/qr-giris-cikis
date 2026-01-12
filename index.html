@@ -68,28 +68,29 @@ async function loadUser() {
 async function addWorkplace() {
   const name = document.getElementById("workplaceName").value;
 
-  const { data, error } = await supabaseClient
-    .from("workplaces")
-    .insert({
-      name: name,
-      owner_id: currentUser.id
-    })
-    .select()
-    .single();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
 
-  if (error) {
-    alert(error.message);
+  if (!user) {
+    alert("Giriş yok");
     return;
   }
 
-  await supabaseClient.from("workplace_users").insert({
-    workplace_id: data.id,
-    user_id: currentUser.id,
-    role: "employer"
-  });
+  const { error } = await supabase
+    .from("workplaces")
+    .insert({
+      name: name,
+      owner_id: user.id
+    });
 
-  alert("İş yeri eklendi ✅");
+  if (error) {
+    alert(error.message);
+  } else {
+    alert("İş yeri eklendi");
+  }
 }
+
 
 async function loadEmployeeWorkplaces() {
   const { data } = await supabaseClient
