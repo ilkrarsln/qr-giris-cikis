@@ -110,42 +110,9 @@ async function loadEmployeeWorkplaces() {
 loadUser();
 
 async function checkInOut(type) {
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    alert("Giriş yok");
-    return;
-  }
-
-  const { data: workplaces } = await supabase
-    .from("workplaces")
-    .select("id")
-    .limit(1);
-
-  if (!workplaces || workplaces.length === 0) {
-    alert("İş yeri bulunamadı");
-    return;
-  }
-
-  const workplaceId = workplaces[0].id;
-
-  const { error } = await supabase
-    .from("attendance_logs")
-    .insert({
-      user_id: user.id,
-      workplace_id: workplaceId,
-      type: type
-    });
-
-  if (error) {
-    alert("Hata: " + error.message);
-  } else {
-    document.getElementById("result").innerText =
-      type === "in" ? "Giriş kaydedildi" : "Çıkış kaydedildi";
-  }
+  alert("Fonksiyon çalıştı: " + type);
 }
+
 
 
 </script>
