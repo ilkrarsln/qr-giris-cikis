@@ -147,11 +147,19 @@ async function checkInOut(type) {
     return;
   }
 
-  const { data: workplace, error: wpError } = await sb
-    .from("workplaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .single();
+  const { data: workplaces, error: wpError } = await sb
+  .from("workplaces")
+  .select("id")
+  .eq("owner_id", user.id)
+  .limit(1);
+
+if (wpError || !workplaces || workplaces.length === 0) {
+  alert("İş yeri bulunamadı");
+  return;
+}
+
+const workplace = workplaces[0];
+
 
   if (wpError || !workplace) {
     alert("İş yeri bulunamadı");
