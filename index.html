@@ -2,37 +2,78 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Supabase Test</title>
+  <title>Giriş</title>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<h2>Supabase Bağlantı Testi</h2>
+<h2>Kullanıcı Girişi</h2>
 
-<button onclick="testSupabase()">Bağlantıyı Test Et</button>
+<input id="email" type="email" placeholder="Email"><br><br>
+<input id="password" type="password" placeholder="Şifre"><br><br>
+
+<select id="role">
+  <option value="">Rol seç</option>
+  <option value="employer">İşveren</option>
+  <option value="employee">Çalışan</option>
+</select>
+
+<br><br>
+
+<button onclick="login()">Giriş Yap</button>
+<button onclick="register()">Kayıt Ol</button>
 
 <script>
-  const SUPABASE_URL = "https://fqqmorvjwfxsqjwvdkgp.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxcW1vcnZqd2Z4c3Fqd3Zka2dwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDE0OTYsImV4cCI6MjA4Mzc3NzQ5Nn0.NVwFiL2mAGGroLlhbp10govDQhZBZzthClboBnsHpLw";
+  const SUPABASE_URL = "BURAYA_URL";
+  const SUPABASE_KEY = "BURAYA_ANON_KEY";
 
   const supabaseClient = supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
   );
 
-  async function testSupabase() {
-    alert("Fonksiyon çalıştı");
+  async function register() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const role = document.getElementById("role").value;
 
-    const { data, error } = await supabaseClient
-      .from("profiles")
-      .select("*");
+    if (!role) {
+      alert("Rol seçmelisin");
+      return;
+    }
+
+    const { data, error } = await supabaseClient.auth.signUp({
+      email,
+      password
+    });
 
     if (error) {
-      alert("Hata: " + error.message);
+      alert(error.message);
+      return;
+    }
+
+    await supabaseClient.from("profiles").insert({
+      id: data.user.id,
+      role: role
+    });
+
+    alert("Kayıt başarılı 🎉");
+  }
+
+  async function login() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    const { error } = await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      alert(error.message);
     } else {
-      alert("Supabase bağlantısı OK 🎉");
-      console.log(data);
+      alert("Giriş başarılı ✅");
     }
   }
 </script>
