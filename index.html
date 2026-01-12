@@ -30,6 +30,8 @@ const supabaseClient = supabase.createClient(
 );
 
 let currentUser = null;
+  
+alert("loadUser çalıştı");
 
 async function loadUser() {
   const { data } = await supabaseClient.auth.getUser();
