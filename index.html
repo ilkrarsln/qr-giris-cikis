@@ -2,17 +2,38 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Test</title>
+  <title>Supabase Test</title>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<h2>Buton Testi</h2>
+<h2>Supabase Bağlantı Testi</h2>
 
-<button onclick="test()">Bana Tıkla</button>
+<button onclick="testSupabase()">Bağlantıyı Test Et</button>
 
 <script>
-  function test() {
-    alert("Buton çalışıyor ✅");
+  const SUPABASE_URL = "https://fqqmorvjwfxsqjwvdkgp.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxcW1vcnZqd2Z4c3Fqd3Zka2dwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDE0OTYsImV4cCI6MjA4Mzc3NzQ5Nn0.NVwFiL2mAGGroLlhbp10govDQhZBZzthClboBnsHpLw";
+
+  const supabaseClient = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+  async function testSupabase() {
+    alert("Fonksiyon çalıştı");
+
+    const { data, error } = await supabaseClient
+      .from("profiles")
+      .select("*");
+
+    if (error) {
+      alert("Hata: " + error.message);
+    } else {
+      alert("Supabase bağlantısı OK 🎉");
+      console.log(data);
+    }
   }
 </script>
 
