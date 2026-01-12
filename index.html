@@ -1,69 +1,105 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <title>Panel</title>
-  
+  <meta charset="UTF-8" />
+  <title>İş Takip Sistemi</title>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    input, button {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+    }
+    button {
+      cursor: pointer;
+    }
+  </style>
 </head>
+
 <body>
 
 <h2 id="title">Yükleniyor...</h2>
 
+<!-- İŞVEREN PANELİ -->
 <div id="employerPanel" style="display:none">
   <h3>İş Yeri Ekle</h3>
-  <input id="workplaceName" placeholder="İş yeri adı">
+
+  <input id="workplaceName" placeholder="İş yeri adı" />
   <button onclick="addWorkplace()">Ekle</button>
+
   <hr>
 
-<h3>Giriş / Çıkış</h3>
+  <h3>Giriş / Çıkış</h3>
+  <button onclick="checkInOut('in')">Giriş Yap</button>
+  <button onclick="checkInOut('out')">Çıkış Yap</button>
 
-<button onclick="checkInOut('in')">Giriş Yap</button>
-<button onclick="checkInOut('out')">Çıkış Yap</button>
-
-<p id="result"></p>
-
+  <p id="result"></p>
 </div>
 
+<!-- ÇALIŞAN PANELİ -->
 <div id="employeePanel" style="display:none">
-  <h3>Bağlı Olduğun İş Yerleri</h3>
-  <ul id="workplaceList"></ul>
+  <h3>Çalışan Paneli</h3>
+  <p>Sadece giriş / çıkış yapabilirsiniz.</p>
 </div>
 
 <script>
-  <script src="https://unpkg.com/@supabase/supabase-js@2">
-const SUPABASE_URL = "https://fqqmorvjwfxsqjwvdkgp.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxcW1vcnZqd2Z4c3Fqd3Zka2dwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDE0OTYsImV4cCI6MjA4Mzc3NzQ5Nn0.NVwFiL2mAGGroLlhbp10govDQhZBZzthClboBnsHpLw";
+/* =======================
+   SUPABASE BAĞLANTI
+======================= */
 
-const supabaseClient = supabase.createClient(
+const SUPABASE_URL = "https://fqqmorvjwfxsqjwvdkgp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxcW1vcnZqd2Z4c3Fqd3Zka2dwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDE0OTYsImV4cCI6MjA4Mzc3NzQ5Nn0.NVwFiL2mAGGroLlhbp10govDQhZBZzthClboBnsHpLw";
+
+const supabase = supabaseJs.createClient(
   SUPABASE_URL,
-  SUPABASE_KEY
+  SUPABASE_ANON_KEY
 );
 
-let currentUser = null;
+/* =======================
+   KULLANICI YÜKLE
+======================= */
 
 async function loadUser() {
-  const { data } = await supabaseClient.auth.getUser();
-  if (!data.user) {
-    alert("Giriş yapmalısın");
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    document.getElementById("title").innerText = "Giriş yok";
     return;
   }
 
-  currentUser = data.user;
-
-  const { data: profile } = await supabaseClient
+  const { data: profile, error } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", currentUser.id)
+    .eq("id", user.id)
     .single();
 
+  if (error || !profile) {
+    document.getElementById("title").innerText = "Profil bulunamadı";
+    return;
+  }
+
+  document.getElementById("title").innerText =
+    "Hoş geldin (" + profile.role + ")";
+
   if (profile.role === "employer") {
-    document.getElementById("title").innerText = "İşveren Paneli";
     document.getElementById("employerPanel").style.display = "block";
   } else {
-    document.getElementById("title").innerText = "Çalışan Paneli";
     document.getElementById("employeePanel").style.display = "block";
-    loadEmployeeWorkplaces();
   }
+}
+
+/* =======================
+   İŞ YERİ EKLE
+======================= */
 
 async function addWorkplace() {
   const name = document.getElementById("workplaceName").value;
@@ -85,29 +121,15 @@ async function addWorkplace() {
     });
 
   if (error) {
-    alert(error.message);
+    alert("Hata: " + error.message);
   } else {
     alert("İş yeri eklendi");
   }
-
-
-async function loadEmployeeWorkplaces() {
-  const { data } = await supabaseClient
-    .from("workplace_users")
-    .select("workplaces(name)")
-    .eq("user_id", currentUser.id);
-
-  const list = document.getElementById("workplaceList");
-  list.innerHTML = "";
-
-  data.forEach(w => {
-    const li = document.createElement("li");
-    li.innerText = w.workplaces.name;
-    list.appendChild(li);
-  });
 }
 
-loadUser();
+/* =======================
+   GİRİŞ / ÇIKIŞ
+======================= */
 
 async function checkInOut(type) {
   const {
@@ -146,8 +168,11 @@ async function checkInOut(type) {
   }
 }
 
+/* =======================
+   SAYFA AÇILINCA
+======================= */
 
-
+loadUser();
 
 </script>
 
