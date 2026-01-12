@@ -2,80 +2,103 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Giriş</title>
-
+  <title>Panel</title>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<h2>Kullanıcı Girişi</h2>
+<h2 id="title">Yükleniyor...</h2>
 
-<input id="email" type="email" placeholder="Email"><br><br>
-<input id="password" type="password" placeholder="Şifre"><br><br>
+<div id="employerPanel" style="display:none">
+  <h3>İş Yeri Ekle</h3>
+  <input id="workplaceName" placeholder="İş yeri adı">
+  <button onclick="addWorkplace()">Ekle</button>
+</div>
 
-<select id="role">
-  <option value="">Rol seç</option>
-  <option value="employer">İşveren</option>
-  <option value="employee">Çalışan</option>
-</select>
-
-<br><br>
-
-<button onclick="login()">Giriş Yap</button>
-<button onclick="register()">Kayıt Ol</button>
+<div id="employeePanel" style="display:none">
+  <h3>Bağlı Olduğun İş Yerleri</h3>
+  <ul id="workplaceList"></ul>
+</div>
 
 <script>
-  const SUPABASE_URL = "https://fqqmorvjwfxsqjwvdkgp.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxcW1vcnZqd2Z4c3Fqd3Zka2dwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDE0OTYsImV4cCI6MjA4Mzc3NzQ5Nn0.NVwFiL2mAGGroLlhbp10govDQhZBZzthClboBnsHpLw";
+const SUPABASE_URL = "https://fqqmorvjwfxsqjwvdkgp.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxcW1vcnZqd2Z4c3Fqd3Zka2dwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDE0OTYsImV4cCI6MjA4Mzc3NzQ5Nn0.NVwFiL2mAGGroLlhbp10govDQhZBZzthClboBnsHpLw";
 
-  const supabaseClient = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
-  async function register() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    const role = document.getElementById("role").value;
+let currentUser = null;
 
-    if (!role) {
-      alert("Rol seçmelisin");
-      return;
-    }
-
-    const { data, error } = await supabaseClient.auth.signUp({
-      email,
-      password
-    });
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    await supabaseClient.from("profiles").insert({
-      id: data.user.id,
-      role: role
-    });
-
-    alert("Kayıt başarılı 🎉");
+async function loadUser() {
+  const { data } = await supabaseClient.auth.getUser();
+  if (!data.user) {
+    alert("Giriş yapmalısın");
+    return;
   }
 
-  async function login() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+  currentUser = data.user;
 
-    const { error } = await supabaseClient.auth.signInWithPassword({
-      email,
-      password
-    });
+  const { data: profile } = await supabaseClient
+    .from("profiles")
+    .select("role")
+    .eq("id", currentUser.id)
+    .single();
 
-    if (error) {
-      alert(error.message);
-    } else {
-      alert("Giriş başarılı ✅");
-    }
+  if (profile.role === "employer") {
+    document.getElementById("title").innerText = "İşveren Paneli";
+    document.getElementById("employerPanel").style.display = "block";
+  } else {
+    document.getElementById("title").innerText = "Çalışan Paneli";
+    document.getElementById("employeePanel").style.display = "block";
+    loadEmployeeWorkplaces();
   }
+}
+
+async function addWorkplace() {
+  const name = document.getElementById("workplaceName").value;
+
+  const { data, error } = await supabaseClient
+    .from("workplaces")
+    .insert({
+      name: name,
+      owner_id: currentUser.id
+    })
+    .select()
+    .single();
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  await supabaseClient.from("workplace_users").insert({
+    workplace_id: data.id,
+    user_id: currentUser.id,
+    role: "employer"
+  });
+
+  alert("İş yeri eklendi ✅");
+}
+
+async function loadEmployeeWorkplaces() {
+  const { data } = await supabaseClient
+    .from("workplace_users")
+    .select("workplaces(name)")
+    .eq("user_id", currentUser.id);
+
+  const list = document.getElementById("workplaceList");
+  list.innerHTML = "";
+
+  data.forEach(w => {
+    const li = document.createElement("li");
+    li.innerText = w.workplaces.name;
+    list.appendChild(li);
+  });
+}
+
+loadUser();
 </script>
 
 </body>
