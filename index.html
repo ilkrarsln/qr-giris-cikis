@@ -98,8 +98,12 @@ async function loadEmployeeWorkplaces() {
   });
 }
 
-loadUser();
-</script>
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    loadUser();
+  }
+});
+
 
 </body>
 </html>
