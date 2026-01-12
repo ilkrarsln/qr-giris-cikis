@@ -109,46 +109,44 @@ async function loadEmployeeWorkplaces() {
 
 loadUser();
 
-  async function checkInOut(type) {
-  document.getElementById("result").innerText = "Konum alınıyor...";
+async function checkInOut(type) {
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
 
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
+  if (!user) {
+    alert("Giriş yok");
+    return;
+  }
 
-      // ŞİMDİLİK: kullanıcının ilk iş yerini alıyoruz
-      const { data: w } = await supabaseClient
-        .from("workplace_users")
-        .select("workplace_id")
-        .eq("user_id", currentUser.id)
-        .limit(1)
-        .single();
+  const { data: workplaces } = await supabase
+    .from("workplaces")
+    .select("id")
+    .limit(1);
 
-      if (!w) {
-        document.getElementById("result").innerText = "İş yeri bulunamadı";
-        return;
-      }
+  if (!workplaces || workplaces.length === 0) {
+    alert("İş yeri bulunamadı");
+    return;
+  }
 
-      await supabaseClient.from("attendance").insert({
-        user_id: currentUser.id,
-        workplace_id: w.workplace_id,
-        type: type,
-        lat: lat,
-        lng: lng
-      });
+  const workplaceId = workplaces[0].id;
 
-      document.getElementById("result").innerText =
-        type === "in"
-          ? "Giriş kaydedildi ✅"
-          : "Çıkış kaydedildi ✅";
-    },
-    () => {
-      document.getElementById("result").innerText =
-        "Konum izni verilmedi ❌";
-    }
-  );
+  const { error } = await supabase
+    .from("attendance_logs")
+    .insert({
+      user_id: user.id,
+      workplace_id: workplaceId,
+      type: type
+    });
+
+  if (error) {
+    alert("Hata: " + error.message);
+  } else {
+    document.getElementById("result").innerText =
+      type === "in" ? "Giriş kaydedildi" : "Çıkış kaydedildi";
+  }
 }
+
 
 </script>
 
